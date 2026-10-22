@@ -1,0 +1,76 @@
+@import "tailwindcss";
+
+:root {
+  /* Institutional Lacson Deep Blue */
+  --lacson-blue-950: #061220;
+  --lacson-blue-900: #0a1c33;
+  --lacson-blue-800: #0e294b;
+  --lacson-blue-700: #143765;
+  --lacson-blue-600: #1b4780;
+  --lacson-blue-500: #255d9d;
+  --lacson-blue-100: #e3ecf7;
+  --lacson-blue-50: #f1f6fc;
+
+  /* Academic Gold Accents */
+  --academic-gold-800: #7d5705;
+  --academic-gold-700: #976b08;
+  --academic-gold-600: #b5820a;
+  --academic-gold-500: #c99313;
+  --academic-gold-400: #deb033;
+  --academic-gold-100: #fbf3d5;
+  --academic-gold-50: #fffdf5;
+
+  /* Neutrals & Surfaces */
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+  --border: #e2e8f0;
+  --border-subtle: #cbd5e1;
+  --muted: #f1f5f9;
+  --muted-foreground: #475569;
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+  
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* Custom Scrollbars for High-Density Operational Tables */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Institutional Badge and Pulse Utilities */
+.status-indicator-live {
+  animation: pulse-dot 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
