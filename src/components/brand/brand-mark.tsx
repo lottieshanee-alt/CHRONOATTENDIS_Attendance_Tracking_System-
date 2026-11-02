@@ -7,9 +7,9 @@ interface BrandMarkProps {
 }
 
 const sizeClasses = {
-  sm: 'w-8 h-8 rounded-md border',
-  md: 'w-10 h-10 rounded-md border-2',
-  lg: 'w-12 h-12 rounded-lg border-2',
+  sm: 'w-8 h-8 rounded-[8px] border',
+  md: 'w-10 h-10 rounded-[8px] border-2',
+  lg: 'w-12 h-12 rounded-[12px] border-2',
 };
 
 const iconSizes = {

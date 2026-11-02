@@ -83,7 +83,7 @@ export function useBarcodeScanner({
   }, [onScan, playAudioTone]);
 
   useEffect(() => {
-    setIsScannerReady(true);
+    const frame = requestAnimationFrame(() => setIsScannerReady(true));
 
     const handleKeyDown = (e: KeyboardEvent) => {
       // Check if user is typing in an editable input or textarea (unless explicitly marked for scanner)
@@ -138,6 +138,7 @@ export function useBarcodeScanner({
 
     window.addEventListener('keydown', handleKeyDown, { capture: true });
     return () => {
+      cancelAnimationFrame(frame);
       window.removeEventListener('keydown', handleKeyDown, { capture: true });
     };
   }, [maxIntervalMs, minChars, triggerScan]);

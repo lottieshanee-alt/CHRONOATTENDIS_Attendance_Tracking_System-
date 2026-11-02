@@ -14,16 +14,17 @@ export function Nav() {
   const menuRef = useRef<HTMLDivElement>(null);
   const toggleBtnRef = useRef<HTMLButtonElement>(null);
 
-  // Add subtle border and shadow only after user scrolls down
+  // Border, shadow and height compression after 8px scroll
   useEffect(() => {
     const handleScroll = () => {
-      setScrolled(window.scrollY > 20);
+      setScrolled(window.scrollY > 8);
     };
+    handleScroll();
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Close mobile menu on Escape key press and trap/restore focus
+  // Trap/restore focus and close on Escape
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isOpen) {
@@ -54,11 +55,13 @@ export function Nav() {
   return (
     <header
       className={cn(
-        'sticky top-0 z-40 w-full bg-white/90 backdrop-blur-md transition-all duration-200 ease-institutional',
-        scrolled ? 'border-b border-slate-200 shadow-raised py-3.5' : 'border-b border-transparent py-5'
+        'sticky top-0 z-40 w-full transition-all duration-240 ease-institutional',
+        scrolled
+          ? 'h-16 bg-white/95 backdrop-blur-md border-b border-slate-200/90 shadow-floating'
+          : 'h-[72px] bg-white/80 backdrop-blur-sm border-b border-transparent'
       )}
     >
-      <Container className="flex items-center justify-between">
+      <Container className="h-full flex items-center justify-between">
         {/* Brand Crest & Title */}
         <Link
           href="/"
@@ -84,7 +87,7 @@ export function Nav() {
             <a
               key={link.href}
               href={link.href}
-              className="text-sm font-medium text-slate-700 hover:text-[#0a1c33] transition-colors duration-120 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1b4780] rounded-[8px] px-2 py-1"
+              className="text-sm font-medium text-slate-700 hover:text-[#0a1c33] link-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1b4780] rounded-[8px] py-1"
             >
               {link.label}
             </a>
@@ -122,7 +125,7 @@ export function Nav() {
           role="dialog"
           aria-modal="true"
           aria-label="Mobile Navigation"
-          className="md:hidden fixed inset-x-0 top-[73px] bg-white border-b border-slate-200 shadow-floating px-6 py-6 transition-all duration-200 ease-institutional"
+          className="md:hidden fixed inset-x-0 top-16 bg-white border-b border-slate-200 shadow-floating px-6 py-6 transition-all duration-240 ease-institutional"
         >
           <nav className="flex flex-col space-y-3">
             {navLinks.map((link) => (

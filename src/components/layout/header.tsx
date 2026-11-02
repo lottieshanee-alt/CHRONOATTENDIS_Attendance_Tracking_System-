@@ -35,11 +35,14 @@ export function Header({
   const [currentDate, setCurrentDate] = useState<Date | null>(null);
 
   useEffect(() => {
-    setCurrentDate(new Date());
+    const frame = requestAnimationFrame(() => setCurrentDate(new Date()));
     const interval = setInterval(() => {
       setCurrentDate(new Date());
     }, 1000);
-    return () => clearInterval(interval);
+    return () => {
+      cancelAnimationFrame(frame);
+      clearInterval(interval);
+    };
   }, []);
 
   return (
