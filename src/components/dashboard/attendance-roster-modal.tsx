@@ -17,16 +17,13 @@ import {
   Search,
   ArrowUpDown,
   Download,
-  Filter,
-  CheckCircle2,
-  AlertTriangle,
-  Clock,
-  LogOut,
   ChevronLeft,
   ChevronRight,
   GraduationCap,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, formatTime } from '@/lib/utils';
+import { toCsv, ATTENDANCE_RECORD_CSV_COLUMNS, downloadCsvFile } from '@/lib/csv';
+import { toManilaISO } from '@/lib/time';
 
 interface AttendanceRosterModalProps {
   isOpen: boolean;
@@ -91,7 +88,7 @@ export function AttendanceRosterModal({
         header: 'Check-in Time',
         cell: (info) => (
           <span className="font-mono text-xs text-slate-600">
-            {info.getValue() as string}
+            {formatTime(info.getValue() as string)}
           </span>
         ),
       },
@@ -131,6 +128,7 @@ export function AttendanceRosterModal({
     []
   );
 
+  // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data: filteredData,
     columns,
@@ -152,20 +150,9 @@ export function AttendanceRosterModal({
   });
 
   const handleExportCSV = () => {
-    const csvRows: string[] = [
-      'Student ID,Full Name,Section,Department,Timestamp,Gate,Status',
-      ...filteredData.map(
-        (r) =>
-          `"${r.studentNumber}","${r.studentName}","${r.yearSection}","${r.department}","${r.timestamp}","${r.scannerLocation}","${r.status}"`
-      ),
-    ];
-    const blob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `JBLCF_Attendance_Roster_${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    const csvContent = toCsv(ATTENDANCE_RECORD_CSV_COLUMNS, filteredData);
+    const dateStamp = toManilaISO().slice(0, 10);
+    downloadCsvFile(`JBLCF_Attendance_Roster_${dateStamp}`, csvContent);
   };
 
   if (!isOpen) return null;

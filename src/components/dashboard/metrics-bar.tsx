@@ -8,8 +8,6 @@ import {
   Clock3,
   Calendar,
   ArrowUpRight,
-  ArrowDownRight,
-  ShieldAlert,
 } from 'lucide-react';
 import { DailyMetrics } from '@/types/attendance';
 import { cn } from '@/lib/utils';
@@ -30,7 +28,6 @@ export function MetricsBar({
   const isToday = selectedPeriod === 'today';
 
   // Calculate comparative delta against previous day
-  const deltaPresent = metrics.presentCount - previousDayMetrics.presentCount;
   const deltaPercent = (metrics.presentPercentage - previousDayMetrics.presentPercentage).toFixed(1);
 
   return (

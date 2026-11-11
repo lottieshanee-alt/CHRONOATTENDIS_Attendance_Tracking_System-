@@ -1,24 +1,21 @@
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { formatTimePHT, formatDatePHT } from './time';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function formatTime(date: Date): string {
-  return date.toLocaleTimeString('en-US', {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: true,
-  });
+/**
+ * Format time in Asia/Manila (PHT) timezone.
+ */
+export function formatTime(date: Date | string | null | undefined): string {
+  return formatTimePHT(date);
 }
 
-export function formatDate(date: Date): string {
-  return date.toLocaleDateString('en-US', {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric',
-  });
+/**
+ * Format date in Asia/Manila (PHT) timezone.
+ */
+export function formatDate(date: Date | string | null | undefined): string {
+  return formatDatePHT(date);
 }

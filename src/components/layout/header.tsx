@@ -7,14 +7,17 @@ import {
   VolumeX,
   Scan,
   Clock,
-  Shield,
   Download,
-  Filter,
 } from 'lucide-react';
-import { cn, formatTime, formatDate } from '@/lib/utils';
+import { cn, formatTime } from '@/lib/utils';
+import {
+  MOCK_ACADEMIC_TERM,
+  MOCK_CAMPUS_NAME,
+  MOCK_CAMPUS_LOCATION,
+} from '@/lib/mock-data';
 
 interface HeaderProps {
-  scannerReady: boolean;
+  scannerReady?: boolean;
   audioEnabled: boolean;
   onToggleAudio: () => void;
   onOpenScannerStation: () => void;
@@ -24,7 +27,7 @@ interface HeaderProps {
 }
 
 export function Header({
-  scannerReady,
+  scannerReady = true,
   audioEnabled,
   onToggleAudio,
   onOpenScannerStation,
@@ -55,11 +58,11 @@ export function Header({
               Institutional Attendance Operations
             </h1>
             <span className="hidden md:inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-[#E3ECF7] text-[#0E294B] border border-[#CBD5E1]">
-              AY 2026–2027 • 1st Semester
+              {MOCK_ACADEMIC_TERM}
             </span>
           </div>
           <p className="text-xs text-slate-500 font-medium">
-            John B. Lacson Colleges Foundation – Bacolod Campus (Mambulac, Silay & Alijis Route)
+            {MOCK_CAMPUS_NAME} ({MOCK_CAMPUS_LOCATION})
           </p>
         </div>
       </div>
@@ -86,6 +89,7 @@ export function Header({
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Search student ID, cadet, section..."
+            aria-label="Search student ID, cadet name, or section"
             className="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-[#0E294B] focus:border-[#0E294B] transition-colors"
           />
         </div>
@@ -111,10 +115,16 @@ export function Header({
           type="button"
           onClick={onOpenScannerStation}
           className="flex items-center gap-2 px-3.5 py-1.5 rounded-md bg-[#0E294B] hover:bg-[#143765] text-white text-xs font-semibold shadow-sm transition-colors border border-[#0A1C33]"
+          title={scannerReady ? 'Scanner listener active' : 'Scanner listener offline'}
         >
           <Scan size={14} className="text-[#DEB033]" />
           <span className="hidden sm:inline">Scanner Station</span>
-          <span className="w-2 h-2 rounded-full bg-emerald-400 status-indicator-live" />
+          <span
+            className={cn(
+              'w-2 h-2 rounded-full',
+              scannerReady ? 'bg-emerald-400 status-indicator-live' : 'bg-amber-400'
+            )}
+          />
         </button>
 
         {/* Quick Report Download / Export */}

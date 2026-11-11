@@ -2,14 +2,9 @@
 
 import React, { useState } from 'react';
 import { INITIAL_STUDENTS } from '@/lib/mock-data';
-import { Student } from '@/types/attendance';
 import {
-  GraduationCap,
   Search,
-  QrCode,
   Phone,
-  ShieldCheck,
-  ChevronRight,
   Zap,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -44,7 +39,7 @@ export function StudentsView({ onSimulateScan }: StudentsViewProps) {
             Student & Cadet Enrollment Directory
           </h2>
           <p className="text-xs text-slate-500">
-            Registered biometric RFID and Barcode credentials for JBLCF-Bacolod
+            Registered Barcode credentials for JBLCF-Bacolod
           </p>
         </div>
 

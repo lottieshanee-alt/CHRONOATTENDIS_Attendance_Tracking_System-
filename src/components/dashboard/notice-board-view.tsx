@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { BellRing, FileText, Calendar, AlertCircle, Shield } from 'lucide-react';
+import { Calendar } from 'lucide-react';
 
 interface Circular {
   id: string;

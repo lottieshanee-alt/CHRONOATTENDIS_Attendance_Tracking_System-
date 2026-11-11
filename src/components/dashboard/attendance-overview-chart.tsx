@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { HOURLY_ATTENDANCE_DATA } from '@/lib/mock-data';
-import { TrendingUp, Info } from 'lucide-react';
+import { TrendingUp } from 'lucide-react';
 
 export function AttendanceOverviewChart() {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);

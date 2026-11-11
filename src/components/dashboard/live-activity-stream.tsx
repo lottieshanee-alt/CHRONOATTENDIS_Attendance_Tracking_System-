@@ -3,41 +3,48 @@
 import React, { useState } from 'react';
 import {
   AttendanceRecord,
-  AttendanceStatus,
-  ScanType,
 } from '@/types/attendance';
 import {
-  UserCheck,
-  Clock,
-  MapPin,
   CheckCircle2,
   AlertTriangle,
   QrCode,
   LogOut,
-  LogIn,
-  Filter,
+  MapPin,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, formatTime } from '@/lib/utils';
 
 interface LiveActivityStreamProps {
   records: AttendanceRecord[];
   onOpenRecordDetail?: (record: AttendanceRecord) => void;
   highlightedId?: string | null;
+  searchQuery?: string;
 }
 
 export function LiveActivityStream({
   records,
   onOpenRecordDetail,
   highlightedId,
+  searchQuery,
 }: LiveActivityStreamProps) {
   const [filter, setFilter] = useState<'all' | 'present' | 'late' | 'time-out'>('all');
 
+  const q = (searchQuery ?? '').toLowerCase().trim();
+
   const filteredRecords = records.filter((r) => {
-    if (filter === 'all') return true;
-    if (filter === 'time-out') return r.scanType === 'time-out';
-    if (filter === 'present') return r.status === 'present' && r.scanType === 'time-in';
-    if (filter === 'late') return r.status === 'late';
-    return true;
+    const passesTab =
+      filter === 'all' ? true
+      : filter === 'time-out' ? r.scanType === 'time-out'
+      : filter === 'present' ? r.status === 'present' && r.scanType === 'time-in'
+      : filter === 'late' ? r.status === 'late'
+      : true;
+    if (!passesTab) return false;
+    if (!q) return true;
+    return (
+      r.studentName.toLowerCase().includes(q) ||
+      r.studentNumber.toLowerCase().includes(q) ||
+      r.yearSection.toLowerCase().includes(q) ||
+      r.department.toLowerCase().includes(q)
+    );
   });
 
   return (
@@ -52,6 +59,11 @@ export function LiveActivityStream({
           <span className="text-xs text-slate-500 font-mono">
             ({records.length} records logged)
           </span>
+          {q && (
+            <span className="text-xs text-[#C99313] font-mono">
+              {filteredRecords.length} match{filteredRecords.length !== 1 ? 'es' : ''}
+            </span>
+          )}
         </div>
 
         {/* Filters */}
@@ -78,7 +90,9 @@ export function LiveActivityStream({
       <div className="my-3 space-y-2.5 max-h-[380px] overflow-y-auto pr-1">
         {filteredRecords.length === 0 ? (
           <div className="py-8 text-center text-slate-400 text-xs">
-            No attendance activity matching current filter.
+            {q
+              ? `No records match "${searchQuery}".`
+              : 'No attendance activity matching current filter.'}
           </div>
         ) : (
           filteredRecords.map((rec) => {
@@ -159,7 +173,7 @@ export function LiveActivityStream({
                   </div>
 
                   <span className="text-[11px] text-slate-600 font-semibold">
-                    {rec.timestamp}
+                    {formatTime(rec.timestamp)}
                   </span>
                 </div>
               </div>

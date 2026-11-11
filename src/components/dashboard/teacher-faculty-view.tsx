@@ -2,12 +2,9 @@
 
 import React from 'react';
 import {
-  UserCheck,
   Award,
-  Phone,
   Mail,
   Building,
-  CheckCircle2,
   Clock,
 } from 'lucide-react';
 

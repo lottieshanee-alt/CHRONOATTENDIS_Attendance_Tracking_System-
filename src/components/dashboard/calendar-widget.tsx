@@ -1,39 +1,106 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Calendar as CalendarIcon,
   ChevronLeft,
   ChevronRight,
   Clock,
   MapPin,
-  UserCheck,
-  ShieldAlert,
 } from 'lucide-react';
 import { ACADEMIC_EVENTS } from '@/lib/mock-data';
-import { AcademicEvent } from '@/types/attendance';
+import { getManilaTimeParts } from '@/lib/time';
 import { cn } from '@/lib/utils';
 
-export function CalendarWidget() {
-  const [selectedDay, setSelectedDay] = useState<number>(22);
-  const [currentMonth] = useState<string>('October 2026');
+function getDaysInMonth(year: number, month: number): number {
+  return new Date(year, month + 1, 0).getDate();
+}
 
-  // Days in October 2026: 31 days. Starts on Thursday (index 4 in Sun-first)
-  const daysInMonth = 31;
-  const startDayOffset = 4; // Thursday
+function getStartDayOffset(year: number, month: number): number {
+  return new Date(year, month, 1).getDay(); // 0 = Sunday
+}
+
+function formatMonthYear(year: number, month: number): string {
+  return new Date(year, month, 1).toLocaleDateString('en-PH', {
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'Asia/Manila',
+  });
+}
+
+export function CalendarWidget() {
+  // Real today in Asia/Manila (getManilaTimeParts returns month 1-based)
+  const todayParts = useMemo(() => getManilaTimeParts(new Date()), []);
+  const todayYear = todayParts.year;
+  const todayMonth = todayParts.month - 1; // convert to 0-based for Date API
+  const todayDay = todayParts.day;
+
+  const [viewYear, setViewYear] = useState(todayYear);
+  const [viewMonth, setViewMonth] = useState(todayMonth);
+  const [selectedDay, setSelectedDay] = useState(todayDay);
+
+  const daysInMonth = useMemo(
+    () => getDaysInMonth(viewYear, viewMonth),
+    [viewYear, viewMonth]
+  );
+  const startDayOffset = useMemo(
+    () => getStartDayOffset(viewYear, viewMonth),
+    [viewYear, viewMonth]
+  );
+  const monthLabel = useMemo(
+    () => formatMonthYear(viewYear, viewMonth),
+    [viewYear, viewMonth]
+  );
+
+  const isCurrentMonth =
+    viewYear === todayYear && viewMonth === todayMonth;
+
+  function goToPrevMonth() {
+    if (viewMonth === 0) {
+      setViewYear((y) => y - 1);
+      setViewMonth(11);
+    } else {
+      setViewMonth((m) => m - 1);
+    }
+    setSelectedDay(1);
+  }
+
+  function goToNextMonth() {
+    if (viewMonth === 11) {
+      setViewYear((y) => y + 1);
+      setViewMonth(0);
+    } else {
+      setViewMonth((m) => m + 1);
+    }
+    setSelectedDay(1);
+  }
+
+  // MOCK: event markers — only shown when viewing Oct 2026 (month index 9)
+  const eventDays: Record<
+    number,
+    { type: 'drill' | 'ceremony' | 'exam'; label: string }
+  > =
+    viewYear === 2026 && viewMonth === 9
+      ? {
+          5: { type: 'ceremony', label: 'Flag Ceremony' },
+          12: { type: 'drill', label: 'Safety Drill' },
+          19: { type: 'exam', label: 'Prelims Day 1' },
+          20: { type: 'exam', label: 'Prelims Day 2' },
+          21: { type: 'drill', label: 'Naval Inspection' },
+          22: { type: 'ceremony', label: 'Morning Colors' },
+          26: { type: 'drill', label: 'Fire Drill' },
+        }
+      : {};
 
   const dayNumbers = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
-  // Events on specific days in the academic calendar
-  const eventDays: Record<number, { type: 'drill' | 'ceremony' | 'exam'; label: string }> = {
-    5: { type: 'ceremony', label: 'Flag Ceremony' },
-    12: { type: 'drill', label: 'Safety Drill' },
-    19: { type: 'exam', label: 'Prelims Day 1' },
-    20: { type: 'exam', label: 'Prelims Day 2' },
-    21: { type: 'drill', label: 'Naval Inspection' },
-    22: { type: 'ceremony', label: 'Morning Colors' },
-    26: { type: 'drill', label: 'Fire Drill' },
-  };
+  const selectedDayLabel =
+    isCurrentMonth && selectedDay === todayDay
+      ? 'Today'
+      : new Date(viewYear, viewMonth, selectedDay).toLocaleDateString('en-PH', {
+          month: 'short',
+          day: 'numeric',
+        });
 
   return (
     <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-sm flex flex-col justify-between">
@@ -42,26 +109,28 @@ export function CalendarWidget() {
         <div className="flex items-center gap-2">
           <CalendarIcon size={16} className="text-[#0E294B]" />
           <h2 className="text-sm font-bold uppercase tracking-wider text-[#0A1C33]">
-            Academic Calendar & Drills
+            Academic Calendar &amp; Drills
           </h2>
         </div>
 
         <div className="flex items-center gap-2">
           <span className="text-xs font-bold text-[#0E294B] font-mono">
-            {currentMonth}
+            {monthLabel}
           </span>
           <div className="flex items-center gap-1">
             <button
               type="button"
+              onClick={goToPrevMonth}
               className="p-1 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded"
-              title="Previous Month"
+              aria-label="Previous month"
             >
               <ChevronLeft size={16} />
             </button>
             <button
               type="button"
+              onClick={goToNextMonth}
               className="p-1 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded"
-              title="Next Month"
+              aria-label="Next month"
             >
               <ChevronRight size={16} />
             </button>
@@ -82,14 +151,13 @@ export function CalendarWidget() {
 
       {/* Days Grid */}
       <div className="grid grid-cols-7 gap-1">
-        {/* Offset for beginning of month */}
         {Array.from({ length: startDayOffset }).map((_, idx) => (
           <div key={`empty-${idx}`} className="h-8" />
         ))}
 
         {dayNumbers.map((day) => {
           const isSelected = selectedDay === day;
-          const isToday = day === 22;
+          const isToday = isCurrentMonth && day === todayDay;
           const event = eventDays[day];
 
           return (
@@ -97,10 +165,11 @@ export function CalendarWidget() {
               key={day}
               type="button"
               onClick={() => setSelectedDay(day)}
+              aria-label={`${day}${event ? ` — ${event.label}` : ''}${isToday ? ' (today)' : ''}`}
               className={cn(
                 'h-8 rounded relative flex flex-col items-center justify-center text-xs font-mono transition-all',
                 isSelected
-                  ? 'bg-[#0E294B] text-white font-bold shadow-xs'
+                  ? 'bg-[#0E294B] text-white font-bold shadow-sm'
                   : isToday
                   ? 'border border-[#C99313] text-[#0A1C33] font-bold bg-[#FFFDF5]'
                   : 'text-slate-700 hover:bg-slate-100'
@@ -109,6 +178,7 @@ export function CalendarWidget() {
               <span>{day}</span>
               {event && (
                 <span
+                  aria-hidden="true"
                   className={cn(
                     'w-1.5 h-1.5 rounded-full absolute bottom-1',
                     isSelected
@@ -126,12 +196,12 @@ export function CalendarWidget() {
         })}
       </div>
 
-      {/* Selected Day Timeline & Events List */}
+      {/* Selected Day Events */}
       <div className="mt-4 pt-3 border-t border-slate-100 space-y-2">
         <div className="flex items-center justify-between text-xs font-semibold text-slate-600">
-          <span>Scheduled Events for Oct {selectedDay}:</span>
+          <span>Scheduled Events — {selectedDayLabel}:</span>
           <span className="text-[11px] text-[#0E294B] font-mono">
-            {selectedDay === 22 ? '4 Events Today' : 'Scheduled Roster'}
+            {ACADEMIC_EVENTS.length} Scheduled
           </span>
         </div>
 
@@ -147,7 +217,7 @@ export function CalendarWidget() {
                 </span>
                 <span
                   className={cn(
-                    'px-1.5 py-0.2 rounded text-[10px] font-semibold uppercase',
+                    'px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase',
                     event.category === 'Ceremony'
                       ? 'bg-[#E3ECF7] text-[#0E294B]'
                       : event.category === 'Drill'
@@ -171,8 +241,12 @@ export function CalendarWidget() {
               </div>
 
               <div className="text-[11px] text-slate-600 flex justify-between pt-1 border-t border-slate-200/60">
-                <span className="text-slate-500">OIC: {event.officerInCharge}</span>
-                <span className="font-medium text-[#0E294B]">{event.departmentScope}</span>
+                <span className="text-slate-500">
+                  OIC: {event.officerInCharge}
+                </span>
+                <span className="font-medium text-[#0E294B]">
+                  {event.departmentScope}
+                </span>
               </div>
             </div>
           ))}

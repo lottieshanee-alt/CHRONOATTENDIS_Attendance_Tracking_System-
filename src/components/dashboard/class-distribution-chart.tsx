@@ -2,13 +2,10 @@
 
 import React, { useState } from 'react';
 import { CLASS_ATTENDANCE_STATS } from '@/lib/mock-data';
-import { ClassAttendanceStat } from '@/types/attendance';
-import { Layers, CheckCircle2, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function ClassDistributionChart() {
   const [selectedDept, setSelectedDept] = useState<string>('all');
-  const [hoveredClass, setHoveredClass] = useState<ClassAttendanceStat | null>(null);
 
   const departments = ['all', 'Maritime Education', 'Business & Hospitality', 'Customs Administration', 'Senior High School'];
 
@@ -62,8 +59,6 @@ export function ClassDistributionChart() {
           return (
             <div
               key={stat.section}
-              onMouseEnter={() => setHoveredClass(stat)}
-              onMouseLeave={() => setHoveredClass(null)}
               className="group cursor-pointer p-2 rounded-md hover:bg-slate-50 transition-colors"
             >
               <div className="flex items-center justify-between text-xs mb-1.5">

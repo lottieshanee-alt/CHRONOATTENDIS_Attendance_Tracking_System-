@@ -6,12 +6,20 @@ import {
   AcademicEvent,
   ActivityHighlight,
   Student,
+  Notice,
 } from '@/types/attendance';
+
+// ─── MOCK INSTITUTIONAL CONFIGURATION ───────────────────────────────────────────
+// MOCK: Academic term and campus identity constants for JBLCF-Bacolod demonstration
+export const MOCK_ACADEMIC_TERM = 'AY 2026–2027 • 1st Semester';
+export const MOCK_CAMPUS_NAME = 'John B. Lacson Colleges Foundation – Bacolod';
+export const MOCK_CAMPUS_LOCATION = 'Bacolod City, Negros Occidental';
+export const MOCK_TOTAL_ENROLLED = 2840;
 
 export const TODAY_METRICS: DailyMetrics = {
   date: '2026-10-22',
   displayDate: 'Thursday, October 22, 2026',
-  totalEnrolled: 2840,
+  totalEnrolled: MOCK_TOTAL_ENROLLED,
   presentCount: 2688,
   presentPercentage: 94.6,
   boysPresent: 1820,
@@ -29,7 +37,7 @@ export const TODAY_METRICS: DailyMetrics = {
 export const PREVIOUS_DAY_METRICS: DailyMetrics = {
   date: '2026-10-21',
   displayDate: 'Wednesday, October 21, 2026',
-  totalEnrolled: 2840,
+  totalEnrolled: MOCK_TOTAL_ENROLLED,
   presentCount: 2615,
   presentPercentage: 92.1,
   boysPresent: 1765,
@@ -55,6 +63,7 @@ export const INITIAL_STUDENTS: Student[] = [
     course: 'BS Marine Transportation',
     yearSection: 'BSMT 2-Alpha',
     emergencyContact: '+63 917 555 3821',
+    isActive: true,
   },
   {
     id: 's-102',
@@ -66,6 +75,7 @@ export const INITIAL_STUDENTS: Student[] = [
     course: 'BS Marine Transportation',
     yearSection: 'BSMT 2-Bravo',
     emergencyContact: '+63 918 444 9102',
+    isActive: true,
   },
   {
     id: 's-103',
@@ -77,6 +87,7 @@ export const INITIAL_STUDENTS: Student[] = [
     course: 'BS Marine Engineering',
     yearSection: 'BSMarE 3-Charlie',
     emergencyContact: '+63 920 333 1928',
+    isActive: true,
   },
   {
     id: 's-104',
@@ -88,6 +99,7 @@ export const INITIAL_STUDENTS: Student[] = [
     course: 'BS Hospitality Management',
     yearSection: 'BSHM 1-Delta',
     emergencyContact: '+63 915 678 4410',
+    isActive: true,
   },
   {
     id: 's-105',
@@ -99,6 +111,7 @@ export const INITIAL_STUDENTS: Student[] = [
     course: 'BS Marine Transportation',
     yearSection: 'BSMT 1-Echo',
     emergencyContact: '+63 922 888 7190',
+    isActive: true,
   },
   {
     id: 's-106',
@@ -110,6 +123,7 @@ export const INITIAL_STUDENTS: Student[] = [
     course: 'BS Marine Engineering',
     yearSection: 'BSMarE 2-Foxtrot',
     emergencyContact: '+63 928 901 2234',
+    isActive: true,
   },
   {
     id: 's-107',
@@ -121,6 +135,7 @@ export const INITIAL_STUDENTS: Student[] = [
     course: 'BS Customs Administration',
     yearSection: 'BSCA 2-Golf',
     emergencyContact: '+63 919 777 5541',
+    isActive: true,
   },
   {
     id: 's-108',
@@ -132,6 +147,7 @@ export const INITIAL_STUDENTS: Student[] = [
     course: 'BS Marine Transportation',
     yearSection: 'BSMT 1-Hotel',
     emergencyContact: '+63 917 111 8892',
+    isActive: true,
   },
   {
     id: 's-109',
@@ -143,6 +159,7 @@ export const INITIAL_STUDENTS: Student[] = [
     course: 'BS Marine Engineering',
     yearSection: 'BSMarE 3-India',
     emergencyContact: '+63 921 555 4433',
+    isActive: true,
   },
   {
     id: 's-110',
@@ -154,6 +171,7 @@ export const INITIAL_STUDENTS: Student[] = [
     course: 'Pre-Baccalaureate Maritime',
     yearSection: 'SHS 11-Jubilee',
     emergencyContact: '+63 926 777 1212',
+    isActive: true,
   },
 ];
 
@@ -167,7 +185,7 @@ export const INITIAL_ATTENDANCE_STREAM: AttendanceRecord[] = [
     department: 'College of Maritime Education',
     gender: 'male',
     scanType: 'time-in',
-    timestamp: '07:18:24 AM',
+    timestamp: '2026-10-22T07:18:24+08:00',
     scannerLocation: 'Gate 1 - Main Turnstile',
     status: 'present',
     verificationMethod: 'BARCODE_HID',
@@ -181,7 +199,7 @@ export const INITIAL_ATTENDANCE_STREAM: AttendanceRecord[] = [
     department: 'College of Maritime Education',
     gender: 'female',
     scanType: 'time-in',
-    timestamp: '07:21:05 AM',
+    timestamp: '2026-10-22T07:21:05+08:00',
     scannerLocation: 'Gate 2 - Maritime Quadrangle',
     status: 'present',
     verificationMethod: 'BARCODE_HID',
@@ -195,7 +213,7 @@ export const INITIAL_ATTENDANCE_STREAM: AttendanceRecord[] = [
     department: 'College of Maritime Education',
     gender: 'male',
     scanType: 'time-in',
-    timestamp: '07:24:41 AM',
+    timestamp: '2026-10-22T07:24:41+08:00',
     scannerLocation: 'Gate 1 - Main Turnstile',
     status: 'present',
     verificationMethod: 'BARCODE_HID',
@@ -209,7 +227,7 @@ export const INITIAL_ATTENDANCE_STREAM: AttendanceRecord[] = [
     department: 'College of Business & Education',
     gender: 'female',
     scanType: 'time-in',
-    timestamp: '07:29:12 AM',
+    timestamp: '2026-10-22T07:29:12+08:00',
     scannerLocation: 'Gate 3 - Academic Wing',
     status: 'present',
     verificationMethod: 'BARCODE_HID',
@@ -223,7 +241,7 @@ export const INITIAL_ATTENDANCE_STREAM: AttendanceRecord[] = [
     department: 'College of Maritime Education',
     gender: 'male',
     scanType: 'time-in',
-    timestamp: '07:44:50 AM',
+    timestamp: '2026-10-22T07:44:50+08:00',
     scannerLocation: 'Gate 2 - Maritime Quadrangle',
     status: 'late',
     verificationMethod: 'BARCODE_HID',
@@ -237,7 +255,7 @@ export const INITIAL_ATTENDANCE_STREAM: AttendanceRecord[] = [
     department: 'College of Maritime Education',
     gender: 'female',
     scanType: 'time-in',
-    timestamp: '07:48:19 AM',
+    timestamp: '2026-10-22T07:48:19+08:00',
     scannerLocation: 'Gate 1 - Main Turnstile',
     status: 'late',
     verificationMethod: 'BARCODE_HID',
@@ -251,7 +269,7 @@ export const INITIAL_ATTENDANCE_STREAM: AttendanceRecord[] = [
     department: 'College of Business & Education',
     gender: 'male',
     scanType: 'time-in',
-    timestamp: '07:51:02 AM',
+    timestamp: '2026-10-22T07:51:02+08:00',
     scannerLocation: 'Gate 3 - Academic Wing',
     status: 'late',
     verificationMethod: 'BARCODE_HID',
@@ -265,7 +283,7 @@ export const INITIAL_ATTENDANCE_STREAM: AttendanceRecord[] = [
     department: 'College of Maritime Education',
     gender: 'female',
     scanType: 'time-in',
-    timestamp: '08:02:15 AM',
+    timestamp: '2026-10-22T08:02:15+08:00',
     scannerLocation: 'Gate 2 - Maritime Quadrangle',
     status: 'late',
     verificationMethod: 'BARCODE_HID',
@@ -431,5 +449,46 @@ export const ACTIVITY_HIGHLIGHTS: ActivityHighlight[] = [
     description: 'Food & Beverage Operations assessment check-in for BSHM Junior sections.',
     enrolledStudentsCount: 42,
     verifiedCount: 0,
+  },
+];
+
+// MOCK: Sample institutional notices for demonstration
+export const MOCK_NOTICES: Notice[] = [
+  {
+    id: 'notice-01',
+    memoNumber: 'CMO-2026-087',
+    title: 'Reminder: Uniform Inspection Every Monday',
+    body: 'All cadets are reminded that uniform inspection is conducted every Monday at 07:15 AM at the Main Maritime Quadrangle. Proper uniform compliance is mandatory.',
+    category: 'Regimental Order',
+    author: 'Capt. R. M. Sian',
+    postedAt: '2026-10-20T08:00:00+08:00',
+    audience: 'Cadets',
+    isPinned: true,
+    isUrgent: false,
+  },
+  {
+    id: 'notice-02',
+    memoNumber: 'AAO-2026-114',
+    title: 'Prelim Examination Schedule — October 19–23, 2026',
+    body: 'Prelim examinations are scheduled from October 19 to 23, 2026. Students must present their exam permits. Attendance will be strictly monitored via barcode scanning at the examination venue gates.',
+    category: 'Academic Advisory',
+    author: 'Office of the Registrar',
+    postedAt: '2026-10-14T09:30:00+08:00',
+    expiresAt: '2026-10-23T18:00:00+08:00',
+    audience: 'All',
+    isPinned: true,
+    isUrgent: true,
+  },
+  {
+    id: 'notice-03',
+    memoNumber: 'ADM-2026-203',
+    title: 'Campus Gate Hours — Semester Update',
+    body: 'Effective November 1, 2026, campus gates will open at 05:30 AM and close at 09:00 PM on school days. Weekend access requires a signed gate pass from the Office of Student Affairs.',
+    category: 'Administrative Memo',
+    author: 'Campus Administrator',
+    postedAt: '2026-10-18T14:00:00+08:00',
+    audience: 'All',
+    isPinned: false,
+    isUrgent: false,
   },
 ];

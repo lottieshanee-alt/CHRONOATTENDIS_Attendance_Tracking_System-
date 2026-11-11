@@ -4,7 +4,6 @@ import React from 'react';
 import {
   LayoutDashboard,
   GraduationCap,
-  Users,
   BellRing,
   UserCheck,
   QrCode,
@@ -15,6 +14,7 @@ import {
   SlidersHorizontal,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { UserProfile } from '@/lib/api/types';
 
 export type NavTab = 'dashboard' | 'teacher' | 'student' | 'notices' | 'account';
 
@@ -25,6 +25,7 @@ interface SidebarProps {
   onToggleCollapse: () => void;
   scannerConnected?: boolean;
   onOpenScannerStation: () => void;
+  userProfile?: UserProfile;
 }
 
 export function Sidebar({
@@ -34,6 +35,7 @@ export function Sidebar({
   onToggleCollapse,
   scannerConnected = true,
   onOpenScannerStation,
+  userProfile,
 }: SidebarProps) {
   const navigationItems = [
     {
@@ -199,7 +201,7 @@ export function Sidebar({
               'w-full rounded-md border border-[#1B4780] bg-[#0E294B] hover:bg-[#143765] transition-all text-left group',
               collapsed ? 'p-2 flex flex-col items-center justify-center' : 'p-3'
             )}
-            title="Open Barcode & RFID Scanner Station"
+            title="Open Barcode Scanner Station (or press F9 anywhere)"
           >
             <div className="flex items-center gap-2">
               <div className="relative shrink-0">
@@ -247,19 +249,19 @@ export function Sidebar({
       <div className="p-3 border-t border-[#143765] bg-[#08172b]">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-md bg-[#143765] border border-[#C99313] flex items-center justify-center font-bold text-sm text-[#C99313] shrink-0">
-            RS
+            {userProfile?.initials ?? 'RS'}
           </div>
 
           {!collapsed && (
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5">
                 <span className="text-sm font-semibold text-white truncate">
-                  Capt. R. M. Sian
+                  {userProfile?.name ?? 'Capt. R. M. Sian'}
                 </span>
                 <ShieldCheck size={14} className="text-[#DEB033] shrink-0" />
               </div>
               <p className="text-xs text-slate-400 truncate">
-                Dean of Maritime Studies
+                {userProfile?.department ?? 'Dean of Maritime Studies'}
               </p>
             </div>
           )}

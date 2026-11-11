@@ -2,8 +2,7 @@
 
 import React from 'react';
 import { ACTIVITY_HIGHLIGHTS } from '@/lib/mock-data';
-import { ActivityHighlight } from '@/types/attendance';
-import { Clock, MapPin, CheckCircle, ShieldCheck } from 'lucide-react';
+import { MapPin } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function ActivityGallery() {
