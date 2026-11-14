@@ -26,6 +26,7 @@ interface SidebarProps {
   scannerConnected?: boolean;
   onOpenScannerStation: () => void;
   userProfile?: UserProfile;
+  onSignOut?: () => void;
 }
 
 export function Sidebar({
@@ -36,6 +37,7 @@ export function Sidebar({
   scannerConnected = true,
   onOpenScannerStation,
   userProfile,
+  onSignOut,
 }: SidebarProps) {
   const navigationItems = [
     {
@@ -269,7 +271,9 @@ export function Sidebar({
           {!collapsed && (
             <button
               type="button"
-              className="p-1.5 text-slate-400 hover:text-white rounded hover:bg-[#143765] transition-colors"
+              onClick={onSignOut}
+              aria-label="Sign Out of Terminal Station"
+              className="p-1.5 text-slate-400 hover:text-white rounded hover:bg-[#143765] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C99313]"
               title="Sign Out"
             >
               <LogOut size={16} />

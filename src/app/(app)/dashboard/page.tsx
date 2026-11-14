@@ -26,6 +26,7 @@ import { useBarcodeScanner } from '@/hooks/use-barcode-scanner';
 import { resolveScan } from '@/lib/scan';
 import { toManilaISO } from '@/lib/time';
 import { useAttendanceStore } from '@/state/attendance-store';
+import { logoutAction } from '@/lib/auth/session';
 
 export default function DashboardPage() {
   const store = useAttendanceStore();
@@ -316,6 +317,9 @@ export default function DashboardPage() {
         scannerConnected={isScannerReady}
         onOpenScannerStation={() => setIsScannerModalOpen(true)}
         userProfile={state.profile}
+        onSignOut={() => {
+          logoutAction();
+        }}
       />
 
       {/* Main Operational Canvas */}

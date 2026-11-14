@@ -24,21 +24,55 @@ export function Nav() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Trap/restore focus and close on Escape
+  // Trap/restore focus and close on Escape (A3 fix)
   useEffect(() => {
+    if (!isOpen) {
+      document.body.style.overflow = '';
+      return;
+    }
+
+    document.body.style.overflow = 'hidden';
+
+    // Focus the first link or button inside the dialog
+    const focusableSelectors = 'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])';
+    const menuEl = menuRef.current;
+    if (menuEl) {
+      const firstFocusable = menuEl.querySelector<HTMLElement>(focusableSelectors);
+      firstFocusable?.focus();
+    }
+
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) {
+      if (e.key === 'Escape') {
         setIsOpen(false);
         toggleBtnRef.current?.focus();
+        return;
+      }
+
+      if (e.key === 'Tab') {
+        if (!menuEl) return;
+        const focusables = Array.from(
+          menuEl.querySelectorAll<HTMLElement>(focusableSelectors)
+        );
+        if (focusables.length === 0) return;
+
+        const firstElement = focusables[0];
+        const lastElement = focusables[focusables.length - 1];
+
+        if (e.shiftKey) {
+          if (document.activeElement === firstElement) {
+            e.preventDefault();
+            lastElement.focus();
+          }
+        } else {
+          if (document.activeElement === lastElement) {
+            e.preventDefault();
+            firstElement.focus();
+          }
+        }
       }
     };
 
-    if (isOpen) {
-      document.addEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
+    document.addEventListener('keydown', handleKeyDown);
 
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
@@ -49,6 +83,7 @@ export function Nav() {
   const navLinks = [
     { href: '#what-it-does', label: 'What it does' },
     { href: '#how-it-works', label: 'How it works' },
+    { href: '#who-it-is-for', label: 'Who it is for' },
     { href: '#faq', label: 'FAQ' },
   ];
 

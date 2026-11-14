@@ -237,10 +237,11 @@ export function EditAccountView({
               <button
                 type="button"
                 onClick={onToggleAudio}
-                className={`px-3 py-1.5 rounded text-xs font-semibold transition-colors ${audioEnabled
+                className={`px-3 py-1.5 rounded text-xs font-semibold transition-colors ${
+                  audioEnabled
                     ? 'bg-[#0E294B] text-white'
                     : 'bg-slate-200 text-slate-700'
-                  }`}
+                }`}
               >
                 {audioEnabled ? 'Enabled' : 'Muted'}
               </button>
