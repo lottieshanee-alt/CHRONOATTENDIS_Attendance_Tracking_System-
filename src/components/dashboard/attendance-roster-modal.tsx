@@ -13,7 +13,6 @@ import {
 } from '@tanstack/react-table';
 import { AttendanceRecord } from '@/types/attendance';
 import {
-  X,
   Search,
   ArrowUpDown,
   Download,
@@ -24,6 +23,7 @@ import {
 import { cn, formatTime } from '@/lib/utils';
 import { toCsv, ATTENDANCE_RECORD_CSV_COLUMNS, downloadCsvFile } from '@/lib/csv';
 import { toManilaISO } from '@/lib/time';
+import { Modal } from '@/components/ui/modal';
 
 interface AttendanceRosterModalProps {
   isOpen: boolean;
@@ -103,225 +103,216 @@ export function AttendanceRosterModal({
       },
       {
         accessorKey: 'status',
-        header: 'Turnout Status',
+        header: 'Status',
         cell: (info) => {
           const status = info.getValue() as string;
-          const isPresent = status === 'present';
-          const isLate = status === 'late';
           return (
             <span
               className={cn(
-                'px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider',
-                isPresent
+                'px-2 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider',
+                status === 'present'
                   ? 'bg-emerald-100 text-emerald-900 border border-emerald-300'
-                  : isLate
-                  ? 'bg-amber-100 text-amber-900 border border-amber-300'
-                  : 'bg-red-100 text-red-900 border border-red-300'
-              )}
+                  : status === 'late'
+    ? 'bg-amber-100 text-amber-900 border border-amber-300'
+    : 'bg-red-100 text-red-900 border border-red-300'
+              )
+}
             >
-              {status}
-            </span>
+  { status }
+            </span >
           );
         },
       },
     ],
-    []
+[]
   );
 
-  // eslint-disable-next-line react-hooks/incompatible-library
-  const table = useReactTable({
-    data: filteredData,
-    columns,
-    state: {
-      sorting,
-      globalFilter,
+// eslint-disable-next-line react-hooks/incompatible-library
+const table = useReactTable({
+  data: filteredData,
+  columns,
+  state: {
+    globalFilter,
+    sorting,
+  },
+  onGlobalFilterChange: setGlobalFilter,
+  onSortingChange: setSorting,
+  getCoreRowModel: getCoreRowModel(),
+  getFilteredRowModel: getFilteredRowModel(),
+  getSortedRowModel: getSortedRowModel(),
+  getPaginationRowModel: getPaginationRowModel(),
+  initialState: {
+    pagination: {
+      pageSize: 10,
     },
-    onSortingChange: setSorting,
-    onGlobalFilterChange: setGlobalFilter,
-    getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    initialState: {
-      pagination: {
-        pageSize: 10,
-      },
-    },
-  });
+  },
+});
 
-  const handleExportCSV = () => {
-    const csvContent = toCsv(ATTENDANCE_RECORD_CSV_COLUMNS, filteredData);
-    const dateStamp = toManilaISO().slice(0, 10);
-    downloadCsvFile(`JBLCF_Attendance_Roster_${dateStamp}`, csvContent);
-  };
+const handleExportCSV = () => {
+  const csvContent = toCsv(ATTENDANCE_RECORD_CSV_COLUMNS, data);
+  const dateStamp = toManilaISO(new Date()).slice(0, 10);
+  const fileName = `JBLCF_Attendance_Roster_${dateStamp}.csv`;
+  downloadCsvFile(fileName, csvContent);
+};
 
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-      <div className="bg-white rounded-lg border border-slate-300 shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-        {/* Header */}
-        <div className="bg-[#0A1C33] text-white p-4 flex items-center justify-between border-b border-[#143765] shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded bg-[#0E294B] border border-[#C99313] flex items-center justify-center text-[#DEB033]">
-              <GraduationCap size={18} />
-            </div>
-            <div>
-              <h2 className="text-base font-bold tracking-tight">
-                Institutional Attendance Roster (TanStack Table v8)
-              </h2>
-              <p className="text-xs text-slate-300">
-                Official check-in logs for John B. Lacson Colleges Foundation – Bacolod
-              </p>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-1 rounded text-slate-400 hover:text-white hover:bg-[#143765] transition-colors"
+return (
+          <Modal
+            isOpen={isOpen}
+            onClose={onClose}
+            title="Official Attendance Roster & Audit Ledger"
+            maxWidth="4xl"
           >
-            <X size={18} />
-          </button>
-        </div>
+            <div className="space-y-4">
+              {/* Subtitle / Filter Header */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50 p-3 rounded-lg border border-slate-200">
+                <div className="flex items-center gap-2">
+                  <GraduationCap size={16} className="text-[#0E294B]" />
+                  <span className="text-xs font-semibold text-slate-700">
+                    Filtering: {filteredData.length} records in active log
+                  </span>
+                </div>
 
-        {/* Toolbar: Search, Filters, CSV Export */}
-        <div className="p-4 border-b border-slate-200 bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
-          <div className="flex flex-1 items-center gap-3">
-            <div className="relative flex-1 max-w-md">
-              <Search
-                size={15}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-              />
-              <input
-                type="text"
-                value={globalFilter ?? ''}
-                onChange={(e) => setGlobalFilter(e.target.value)}
-                placeholder="Search across all columns..."
-                className="w-full pl-9 pr-3 py-1.5 text-xs bg-white border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#0E294B] focus:border-[#0E294B]"
-              />
-            </div>
+                      <div className="flex items-center gap-2">
+                        {/* Status Filter Tabs */}
+                        <div className="flex rounded-md bg-white border border-slate-200 p-0.5">
+                          {(['all', 'present', 'late', 'absent'] as const).map((mode) => (
+                            <button
+                              key={mode}
+                              type="button"
+                              onClick={() => setStatusFilter(mode)}
+                              className={cn(
+                    'px-2.5 py-1 text-xs rounded font-medium transition-colors capitalize',
+                                statusFilter === mode
+                                  ? 'bg-[#0E294B] text-white shadow-xs'
+                                  : 'text-slate-600 hover:text-slate-900'
+                              )}
+                            >
+                              {mode}
+                            </button>
+                          ))}
+                        </div>
 
-            <div className="flex items-center gap-1.5 text-xs">
-              <span className="text-slate-500 font-medium">Status:</span>
-              {(['all', 'present', 'late'] as const).map((st) => (
-                <button
-                  key={st}
-                  type="button"
-                  onClick={() => setStatusFilter(st)}
-                  className={cn(
-                    'px-2.5 py-1 rounded text-xs capitalize font-medium transition-colors',
-                    statusFilter === st
-                      ? 'bg-[#0E294B] text-white'
-                      : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'
-                  )}
-                >
-                  {st}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={handleExportCSV}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-300 hover:bg-slate-100 text-slate-800 text-xs font-semibold rounded-md transition-colors shadow-xs"
-          >
-            <Download size={14} className="text-slate-600" />
-            <span>Export CSV</span>
-          </button>
-        </div>
-
-        {/* Table Content */}
-        <div className="flex-1 overflow-auto p-4">
-          <table className="w-full text-left text-xs border border-slate-200 rounded-md">
-            <thead className="bg-[#F0F4F9] text-[#0A1C33] uppercase text-[11px] font-bold border-b border-slate-200 select-none">
-              {table.getHeaderGroups().map((headerGroup) => (
-                <tr key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => (
-                    <th
-                      key={header.id}
-                      className="px-3.5 py-2.5 cursor-pointer hover:bg-slate-200/60 transition-colors"
-                      onClick={header.column.getToggleSortingHandler()}
-                    >
-                      <div className="flex items-center gap-1.5">
-                        {flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                        <ArrowUpDown size={12} className="text-slate-400" />
+                        {/* Export CSV Button */}
+                        <button
+                          type="button"
+                          onClick={handleExportCSV}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[#0E294B] hover:bg-[#143765] text-white text-xs font-semibold shadow-xs transition-colors shrink-0"
+                          title="Download verified CSV roster with formula protection & UTF-8 BOM"
+                        >
+                          <Download size={13} className="text-[#DEB033]" />
+                          <span>Export CSV</span>
+                        </button>
                       </div>
-                    </th>
-                  ))}
-                </tr>
-              ))}
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {table.getRowModel().rows.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={columns.length}
-                    className="p-8 text-center text-slate-400 text-xs"
-                  >
-                    No attendance records match the specified search or filter.
-                  </td>
-                </tr>
-              ) : (
-                table.getRowModel().rows.map((row) => (
-                  <tr
-                    key={row.id}
-                    className="hover:bg-slate-50 transition-colors"
-                  >
-                    {row.getVisibleCells().map((cell) => (
-                      <td key={cell.id} className="px-3.5 py-2.5">
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext()
-                        )}
-                      </td>
-                    ))}
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
         </div>
 
-        {/* Pagination Controls */}
-        <div className="p-3 border-t border-slate-200 bg-slate-50 flex items-center justify-between text-xs text-slate-600 shrink-0">
-          <div>
-            Showing{' '}
-            <strong className="text-slate-900">
-              {table.getRowModel().rows.length}
-            </strong>{' '}
-            of <strong className="text-slate-900">{filteredData.length}</strong>{' '}
-            records
-          </div>
+                  {/* Search Input Bar */}
+                  <div className="relative">
+                    <Search
+                      size={15}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                    />
+                    <input
+                      type="text"
+                      value={globalFilter ?? ''}
+                      onChange={(e) => setGlobalFilter(e.target.value)}
+                      placeholder="Search across all columns (name, ID, section, gate)..."
+                      aria-label="Filter roster records"
+                      className="w-full pl-9 pr-4 py-2 text-xs bg-slate-50 border border-slate-200 rounded-md focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#0E294B]"
+                    />
+                  </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => table.previousPage()}
-              disabled={!table.getCanPreviousPage()}
-              className="p-1.5 rounded border border-slate-300 bg-white text-slate-700 hover:bg-slate-100 disabled:opacity-40 disabled:pointer-events-none"
-            >
-              <ChevronLeft size={16} />
-            </button>
-            <span className="font-mono text-xs">
-              Page {table.getState().pagination.pageIndex + 1} of{' '}
-              {table.getPageCount() || 1}
-            </span>
-            <button
-              type="button"
-              onClick={() => table.nextPage()}
-              disabled={!table.getCanNextPage()}
-              className="p-1.5 rounded border border-slate-300 bg-white text-slate-700 hover:bg-slate-100 disabled:opacity-40 disabled:pointer-events-none"
-            >
-              <ChevronRight size={16} />
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+                        {/* Responsive Table Container */}
+                        <div className="border border-slate-200 rounded-md overflow-x-auto max-h-[400px]">
+                          <table className="w-full text-left text-xs border-collapse">
+                            <thead className="bg-[#0A1C33] text-white font-semibold uppercase tracking-wider text-[11px] sticky top-0 z-10">
+                              {table.getHeaderGroups().map((headerGroup) => (
+                                <tr key={headerGroup.id}>
+                                  {headerGroup.headers.map((header) => (
+                                    <th
+                                      key={header.id}
+                                      className="px-3.5 py-2.5 font-bold cursor-pointer select-none whitespace-nowrap hover:bg-[#143765] transition-colors"
+                                      onClick={header.column.getToggleSortingHandler()}
+                                    >
+                                      <div className="flex items-center gap-1.5">
+                                        {flexRender(
+                                          header.column.columnDef.header,
+                                          header.getContext()
+                                        )}
+                                        <ArrowUpDown size={11} className="text-slate-400" />
+                                      </div>
+                                    </th>
+                                  ))}
+                                </tr>
+                              ))}
+                            </thead>
+                              <tbody className="divide-y divide-slate-200 font-mono text-slate-700 bg-white">
+                                {table.getRowModel().rows.length === 0 ? (
+                                  <tr>
+                                    <td
+                                      colSpan={columns.length}
+                                      className="p-8 text-center text-slate-400 font-sans text-xs"
+                                    >
+                                      No attendance records found matching current criteria.
+                                    </td>
+                                  </tr>
+                                ) : (
+                                  table.getRowModel().rows.map((row) => (
+                                    <tr
+                                      key={row.id}
+                                      className="hover:bg-slate-50 transition-colors"
+                                    >
+                                      {row.getVisibleCells().map((cell) => (
+                                        <td key={cell.id} className="px-3.5 py-2.5">
+                                          {flexRender(
+                                            cell.column.columnDef.cell,
+                                            cell.getContext()
+                                          )}
+                                        </td>
+                                      ))}
+                                    </tr>
+                                  ))
+                                )}
+                              </tbody>
+                          </table>
+                        </div>
+
+                        {/* Pagination Controls */}
+                          <div className="p-3 border-t border-slate-200 bg-slate-50 flex items-center justify-between text-xs text-slate-600 rounded-md">
+                            <div>
+                              Showing{' '}
+                              <strong className="text-slate-900">
+                                {table.getRowModel().rows.length}
+                              </strong>{' '}
+                              of <strong className="text-slate-900">{filteredData.length}</strong>{' '}
+                              records
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => table.previousPage()}
+                                disabled={!table.getCanPreviousPage()}
+                                aria-label="Previous page"
+                                className="p-1.5 rounded border border-slate-300 bg-white text-slate-700 hover:bg-slate-100 disabled:opacity-40 disabled:pointer-events-none"
+                              >
+                                <ChevronLeft size={16} />
+                              </button>
+                              <span className="font-mono text-xs">
+                                Page {table.getState().pagination.pageIndex + 1} of{' '}
+                                {table.getPageCount() || 1}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => table.nextPage()}
+                                disabled={!table.getCanNextPage()}
+                                aria-label="Next page"
+                                className="p-1.5 rounded border border-slate-300 bg-white text-slate-700 hover:bg-slate-100 disabled:opacity-40 disabled:pointer-events-none"
+                              >
+                                <ChevronRight size={16} />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                    </Modal>
+                    );
 }

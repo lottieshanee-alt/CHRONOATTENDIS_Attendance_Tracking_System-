@@ -7,7 +7,7 @@ import {
   VolumeX,
   Scan,
   Clock,
-  Download,
+  Menu,
 } from 'lucide-react';
 import { cn, formatTime } from '@/lib/utils';
 import {
@@ -24,6 +24,7 @@ interface HeaderProps {
   onOpenExportDialog?: () => void;
   searchQuery: string;
   onSearchChange: (query: string) => void;
+  onOpenMobileMenu?: () => void;
 }
 
 export function Header({
@@ -31,9 +32,9 @@ export function Header({
   audioEnabled,
   onToggleAudio,
   onOpenScannerStation,
-  onOpenExportDialog,
   searchQuery,
   onSearchChange,
+  onOpenMobileMenu,
 }: HeaderProps) {
   const [currentDate, setCurrentDate] = useState<Date | null>(null);
 
@@ -49,97 +50,89 @@ export function Header({
   }, []);
 
   return (
-    <header className="h-20 bg-white border-b border-slate-200 px-6 flex items-center justify-between shrink-0 z-20">
-      {/* Left: Department & Campus Info */}
-      <div className="flex items-center gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-lg font-bold text-[#0A1C33] tracking-tight">
-              Institutional Attendance Operations
-            </h1>
-            <span className="hidden md:inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-[#E3ECF7] text-[#0E294B] border border-[#CBD5E1]">
-              {MOCK_ACADEMIC_TERM}
-            </span>
-          </div>
-          <p className="text-xs text-slate-500 font-medium">
-            {MOCK_CAMPUS_NAME} ({MOCK_CAMPUS_LOCATION})
-          </p>
-        </div>
-      </div>
+          <header className="h-20 bg-white border-b border-slate-200 px-4 sm:px-6 flex items-center justify-between shrink-0 z-20">
+            {/* Left: Mobile Menu Toggle & Campus Info */}
+            <div className="flex items-center gap-3 min-w-0">
+              {/* Mobile Hamburger Toggle Button (A1) */}
+              <button
+                type="button"
+                onClick={onOpenMobileMenu}
+                aria-label="Open navigation menu"
+                className="lg:hidden p-2 rounded-md border border-slate-200 text-slate-700 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0E294B] shrink-0"
+              >
+                <Menu size={20} />
+              </button>
 
-      {/* Right Controls: Real-time Clock, Scanner Trigger, Audio Toggle, Search */}
-      <div className="flex items-center gap-3">
-        {/* Real-time Institutional PHT Clock */}
-        <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-md bg-slate-50 border border-slate-200 text-xs font-mono text-slate-700">
-          <Clock size={14} className="text-[#0E294B]" />
-          <span className="font-semibold text-slate-900">
-            {currentDate ? formatTime(currentDate) : '--:--:-- --'}
-          </span>
-          <span className="text-slate-400">PHT</span>
-        </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                    <h1 className="text-sm sm:text-base md:text-lg font-bold text-[#0A1C33] tracking-tight truncate">
+                      Attendance Operations
+                    </h1>
+                      <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-[#E3ECF7] text-[#0E294B] border border-[#CBD5E1] shrink-0">
+                        {MOCK_ACADEMIC_TERM}
+                      </span>
+                    </div>
+                      <p className="text-[11px] sm:text-xs text-slate-500 font-medium truncate">
+                        {MOCK_CAMPUS_NAME} ({MOCK_CAMPUS_LOCATION})
+                      </p>
+                    </div>
+                </div>
 
-        {/* Global Search Bar */}
-        <div className="relative w-48 md:w-64">
-          <Search
-            size={15}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
-          />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => onSearchChange(e.target.value)}
-            placeholder="Search student ID, cadet, section..."
-            aria-label="Search student ID, cadet name, or section"
-            className="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-[#0E294B] focus:border-[#0E294B] transition-colors"
-          />
-        </div>
+                {/* Right Controls: Real-time Clock, Scanner Trigger, Audio Toggle, Search */}
+                  <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+                    {/* Real-time Institutional PHT Clock */}
+                    <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-md bg-slate-50 border border-slate-200 text-xs font-mono text-slate-700">
+                      <Clock size={14} className="text-[#0E294B]" />
+                      <span className="font-semibold text-slate-900">
+                        {currentDate ? formatTime(currentDate) : '--:--:-- --'}
+                      </span>
+                      <span className="text-slate-400">PHT</span>
+                    </div>
 
-        {/* Audio Feedback Button */}
-        <button
-          type="button"
-          onClick={onToggleAudio}
-          className={cn(
-            'p-2 rounded-md border text-xs font-medium transition-colors flex items-center justify-center',
-            audioEnabled
-              ? 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100'
-              : 'border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100'
-          )}
-          title={audioEnabled ? 'Hardware Beep: Enabled' : 'Hardware Beep: Muted'}
-          aria-label={audioEnabled ? 'Mute scanner audio' : 'Enable scanner audio'}
-        >
-          {audioEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
-        </button>
+                    {/* Global Search Bar */}
+                      <div className="relative w-36 sm:w-48 md:w-64">
+                        <Search
+                          size={15}
+                          className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+                        />
+                        <input
+                          type="text"
+                          value={searchQuery}
+                          onChange={(e) => onSearchChange(e.target.value)}
+                          placeholder="Search ID, name, section..."
+                          aria-label="Search student ID, cadet name, or section"
+                          className="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-[#0E294B] focus:border-[#0E294B] transition-colors"
+                        />
+                      </div>
 
-        {/* Barcode Scanner Modal Launch Button */}
-        <button
-          type="button"
-          onClick={onOpenScannerStation}
-          className="flex items-center gap-2 px-3.5 py-1.5 rounded-md bg-[#0E294B] hover:bg-[#143765] text-white text-xs font-semibold shadow-sm transition-colors border border-[#0A1C33]"
-          title={scannerReady ? 'Scanner listener active' : 'Scanner listener offline'}
-        >
-          <Scan size={14} className="text-[#DEB033]" />
-          <span className="hidden sm:inline">Scanner Station</span>
-          <span
-            className={cn(
-              'w-2 h-2 rounded-full',
-              scannerReady ? 'bg-emerald-400 status-indicator-live' : 'bg-amber-400'
-            )}
-          />
-        </button>
+                      {/* Audio Feedback Button */}
+                      <button
+                        type="button"
+                        onClick={onToggleAudio}
+                        className={cn(
+                          'p-2 rounded-md border text-xs font-medium transition-colors flex items-center justify-center',
+                          audioEnabled
+                            ? 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100'
+                            : 'border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100'
+                        )}
+                        title={audioEnabled ? 'Hardware Beep: Enabled' : 'Hardware Beep: Muted'}
+                        aria-label={audioEnabled ? 'Mute scanner audio' : 'Enable scanner audio'}
+                      >
+                        {audioEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
+                      </button>
 
-        {/* Quick Report Download / Export */}
-        {onOpenExportDialog && (
-          <button
-            type="button"
-            onClick={onOpenExportDialog}
-            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium transition-colors"
-            title="Export Attendance Report"
-          >
-            <Download size={14} className="text-slate-600" />
-            <span>Export Roster</span>
-          </button>
-        )}
-      </div>
-    </header>
-  );
+                      {/* Barcode Scanner Modal Launch Button */}
+                      <button
+                        type="button"
+                        onClick={onOpenScannerStation}
+                        className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-[#0E294B] hover:bg-[#143765] text-white text-xs font-semibold shadow-sm transition-colors border border-[#0A1C33]"
+                        title={scannerReady ? 'Scanner listener active' : 'Scanner listener offline'}
+                        aria-label="Open Barcode Scanner Station"
+                      >
+                        <Scan size={14} className="text-[#DEB033]" />
+                        <span className="hidden sm:inline font-mono">F9 / SCAN</span>
+                      </button>
+                    </div>
+                  </header>
+                  );
 }

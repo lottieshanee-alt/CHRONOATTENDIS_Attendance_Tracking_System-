@@ -34,6 +34,7 @@ export default function DashboardPage() {
 
   const [currentTab, setCurrentTab] = useState<NavTab>('dashboard');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState<'today' | 'previous'>('today');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -320,6 +321,8 @@ export default function DashboardPage() {
         onSignOut={() => {
           logoutAction();
         }}
+        mobileOpen={isMobileMenuOpen}
+        onCloseMobile={() => setIsMobileMenuOpen(false)}
       />
 
       {/* Main Operational Canvas */}
@@ -333,6 +336,7 @@ export default function DashboardPage() {
           onOpenExportDialog={() => setIsRosterModalOpen(true)}
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
+          onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
         />
 
         {/* Live Notification Toast Banner */}
@@ -356,6 +360,7 @@ export default function DashboardPage() {
                 selectedPeriod={selectedPeriod}
                 onSelectPeriod={setSelectedPeriod}
                 previousDayMetrics={PREVIOUS_DAY_METRICS}
+                showGenderSplit={state.settings.showGenderSplit}
               />
 
               {/* Section 2: Analytics & Trends */}
