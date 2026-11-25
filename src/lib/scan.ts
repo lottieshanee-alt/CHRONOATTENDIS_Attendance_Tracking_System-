@@ -1,5 +1,5 @@
 import { Student, AttendanceRecord, Session, ScanOutcome } from '../types/attendance';
-import { isLatePHT, toManilaISO, formatTimePHT } from './time';
+import { isLatePHT, toManilaISO, formatTimePHT, getManilaDateKey } from './time';
 
 export interface ScanContext {
   students: Student[];
@@ -81,7 +81,11 @@ export function resolveScan(barcode: string, context: ScanContext): ScanOutcome 
   }
 
   // 7. Check session section enrollment (if session has a specific section)
-  if (session && session.section && matchedStudent.yearSection !== session.section) {
+  const isAllSections =
+    !session?.section ||
+    session.section === 'All Sections' ||
+    session.section === 'All';
+  if (session && !isAllSections && matchedStudent.yearSection !== session.section) {
     return {
       type: 'NOT_ENROLLED',
       student: matchedStudent,
@@ -90,13 +94,17 @@ export function resolveScan(barcode: string, context: ScanContext): ScanOutcome 
     };
   }
 
-  // 8. Check for duplicate scan in the current session / day (B1 fix)
-  const existingRecord = existingRecords.find(
-    (r) =>
-      r.studentId === matchedStudent.id &&
-      !r.voidedAt &&
-      r.scanType === 'time-in'
-  );
+  // 8. Check for duplicate scan scoped to session (if active) or Manila calendar date (N2 fix)
+  const todayKey = getManilaDateKey(now);
+  const existingRecord = existingRecords.find((r) => {
+    if (r.studentId !== matchedStudent.id || r.voidedAt || r.scanType !== 'time-in') {
+      return false;
+    }
+    if (session) {
+      return r.sessionId === session.id;
+    }
+    return getManilaDateKey(r.timestamp) === todayKey;
+  });
 
   if (existingRecord) {
     const formattedExistingTime = formatTimePHT(existingRecord.timestamp);
@@ -118,6 +126,7 @@ export function resolveScan(barcode: string, context: ScanContext): ScanOutcome 
   // 10. Generate compliant AttendanceRecord
   const record: AttendanceRecord = {
     id: `rec-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    sessionId: session?.id,
     studentId: matchedStudent.id,
     studentName: matchedStudent.fullName,
     studentNumber: matchedStudent.studentNumber,

@@ -30,6 +30,7 @@ export interface Student {
 
 export interface AttendanceRecord {
   id: string;
+  sessionId?: string;     // ID of the active session this record was recorded in
   studentId: string;
   studentName: string;
   studentNumber: string;
@@ -128,6 +129,7 @@ export interface Notice {
   audience: 'All' | 'Faculty' | 'Students' | 'Cadets';
   isPinned: boolean;
   isUrgent: boolean;
+  readAt?: string;        // ISO 8601 — undefined = unread (R13, R15)
 }
 
 // ─── Analytics types (unchanged) ───────────────────────────────────────────────

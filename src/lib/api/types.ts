@@ -3,6 +3,8 @@ import {
   AttendanceRecord,
   Settings,
   Notice,
+  Session,
+  AuditEntry,
   DEFAULT_SETTINGS,
 } from '@/types/attendance';
 
@@ -31,6 +33,12 @@ export interface AttendanceApi {
   listRecords(): Promise<AttendanceRecord[]>;
   saveRecords(records: AttendanceRecord[]): Promise<void>;
 
+  listSessions(): Promise<Session[]>;
+  saveSessions(sessions: Session[]): Promise<void>;
+
+  listAuditEntries(): Promise<AuditEntry[]>;
+  saveAuditEntries(entries: AuditEntry[]): Promise<void>;
+
   getSettings(): Promise<Settings>;
   saveSettings(settings: Settings): Promise<void>;
 
@@ -38,6 +46,7 @@ export interface AttendanceApi {
   saveProfile(profile: UserProfile): Promise<void>;
 
   listNotices(): Promise<Notice[]>;
+  saveNotices(notices: Notice[]): Promise<void>;
 }
 
 // Re-export DEFAULT_SETTINGS so the adapter can reference it without a circular import

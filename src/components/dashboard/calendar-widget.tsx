@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { ACADEMIC_EVENTS } from '@/lib/mock-data';
 import { getManilaTimeParts } from '@/lib/time';
+import { useIsMounted } from '@/hooks/use-is-mounted';
 import { cn } from '@/lib/utils';
 
 function getDaysInMonth(year: number, month: number): number {
@@ -29,15 +30,26 @@ function formatMonthYear(year: number, month: number): string {
 }
 
 export function CalendarWidget() {
-  // Real today in Asia/Manila (getManilaTimeParts returns month 1-based)
-  const todayParts = useMemo(() => getManilaTimeParts(new Date()), []);
-  const todayYear = todayParts.year;
-  const todayMonth = todayParts.month - 1; // convert to 0-based for Date API
-  const todayDay = todayParts.day;
+  const isMounted = useIsMounted();
+  const [monthOffset, setMonthOffset] = useState(0);
+  const [selectedDayOverride, setSelectedDayOverride] = useState<number | null>(null);
 
-  const [viewYear, setViewYear] = useState(todayYear);
-  const [viewMonth, setViewMonth] = useState(todayMonth);
-  const [selectedDay, setSelectedDay] = useState(todayDay);
+  // Today in Asia/Manila (safe SSR fallback, live after mount via useIsMounted)
+  const todayParts = useMemo(() => {
+    if (!isMounted) {
+      return { year: 2026, month: 9, day: 22 };
+    }
+    const p = getManilaTimeParts(new Date());
+    return { year: p.year, month: p.month - 1, day: p.day };
+  }, [isMounted]);
+
+  const viewDate = useMemo(() => {
+    return new Date(todayParts.year, todayParts.month + monthOffset, 1);
+  }, [todayParts.year, todayParts.month, monthOffset]);
+
+  const viewYear = viewDate.getFullYear();
+  const viewMonth = viewDate.getMonth();
+  const selectedDay = selectedDayOverride ?? todayParts.day;
 
   const daysInMonth = useMemo(
     () => getDaysInMonth(viewYear, viewMonth),
@@ -53,26 +65,16 @@ export function CalendarWidget() {
   );
 
   const isCurrentMonth =
-    viewYear === todayYear && viewMonth === todayMonth;
+    viewYear === todayParts.year && viewMonth === todayParts.month;
 
   function goToPrevMonth() {
-    if (viewMonth === 0) {
-      setViewYear((y) => y - 1);
-      setViewMonth(11);
-    } else {
-      setViewMonth((m) => m - 1);
-    }
-    setSelectedDay(1);
+    setMonthOffset((prev) => prev - 1);
+    setSelectedDayOverride(1);
   }
 
   function goToNextMonth() {
-    if (viewMonth === 11) {
-      setViewYear((y) => y + 1);
-      setViewMonth(0);
-    } else {
-      setViewMonth((m) => m + 1);
-    }
-    setSelectedDay(1);
+    setMonthOffset((prev) => prev + 1);
+    setSelectedDayOverride(1);
   }
 
   // MOCK: event markers — only shown when viewing Oct 2026 (month index 9)
@@ -82,25 +84,25 @@ export function CalendarWidget() {
   > =
     viewYear === 2026 && viewMonth === 9
       ? {
-          5: { type: 'ceremony', label: 'Flag Ceremony' },
-          12: { type: 'drill', label: 'Safety Drill' },
-          19: { type: 'exam', label: 'Prelims Day 1' },
-          20: { type: 'exam', label: 'Prelims Day 2' },
-          21: { type: 'drill', label: 'Naval Inspection' },
-          22: { type: 'ceremony', label: 'Morning Colors' },
-          26: { type: 'drill', label: 'Fire Drill' },
-        }
+        5: { type: 'ceremony', label: 'Flag Ceremony' },
+        12: { type: 'drill', label: 'Safety Drill' },
+        19: { type: 'exam', label: 'Prelims Day 1' },
+        20: { type: 'exam', label: 'Prelims Day 2' },
+        21: { type: 'drill', label: 'Naval Inspection' },
+        22: { type: 'ceremony', label: 'Morning Colors' },
+        26: { type: 'drill', label: 'Fire Drill' },
+      }
       : {};
 
   const dayNumbers = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
   const selectedDayLabel =
-    isCurrentMonth && selectedDay === todayDay
+    isCurrentMonth && selectedDay === todayParts.day
       ? 'Today'
       : new Date(viewYear, viewMonth, selectedDay).toLocaleDateString('en-PH', {
-          month: 'short',
-          day: 'numeric',
-        });
+        month: 'short',
+        day: 'numeric',
+      });
 
   return (
     <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-sm flex flex-col justify-between">
@@ -157,22 +159,22 @@ export function CalendarWidget() {
 
         {dayNumbers.map((day) => {
           const isSelected = selectedDay === day;
-          const isToday = isCurrentMonth && day === todayDay;
+          const isToday = isCurrentMonth && day === todayParts.day;
           const event = eventDays[day];
 
           return (
             <button
               key={day}
               type="button"
-              onClick={() => setSelectedDay(day)}
+              onClick={() => setSelectedDayOverride(day)}
               aria-label={`${day}${event ? ` — ${event.label}` : ''}${isToday ? ' (today)' : ''}`}
               className={cn(
                 'h-8 rounded relative flex flex-col items-center justify-center text-xs font-mono transition-all',
                 isSelected
                   ? 'bg-[#0E294B] text-white font-bold shadow-sm'
                   : isToday
-                  ? 'border border-[#C99313] text-[#0A1C33] font-bold bg-[#FFFDF5]'
-                  : 'text-slate-700 hover:bg-slate-100'
+                    ? 'border border-[#C99313] text-[#0A1C33] font-bold bg-[#FFFDF5]'
+                    : 'text-slate-700 hover:bg-slate-100'
               )}
             >
               <span>{day}</span>
@@ -184,10 +186,10 @@ export function CalendarWidget() {
                     isSelected
                       ? 'bg-[#DEB033]'
                       : event.type === 'ceremony'
-                      ? 'bg-[#0E294B]'
-                      : event.type === 'drill'
-                      ? 'bg-[#C99313]'
-                      : 'bg-emerald-600'
+                        ? 'bg-[#0E294B]'
+                        : event.type === 'drill'
+                          ? 'bg-[#C99313]'
+                          : 'bg-emerald-600'
                   )}
                 />
               )}
@@ -221,8 +223,8 @@ export function CalendarWidget() {
                     event.category === 'Ceremony'
                       ? 'bg-[#E3ECF7] text-[#0E294B]'
                       : event.category === 'Drill'
-                      ? 'bg-amber-100 text-amber-900'
-                      : 'bg-emerald-100 text-emerald-900'
+                        ? 'bg-amber-100 text-amber-900'
+                        : 'bg-emerald-100 text-emerald-900'
                   )}
                 >
                   {event.category}

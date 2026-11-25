@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
   X,
   QrCode,
@@ -11,6 +11,8 @@ import {
   AlertTriangle,
   LogOut,
   ShieldCheck,
+  Ban,
+  Check,
 } from 'lucide-react';
 import { AttendanceRecord } from '@/types/attendance';
 import { formatTimePHT, formatDatePHT } from '@/lib/time';
@@ -19,16 +21,33 @@ import { cn } from '@/lib/utils';
 interface RecordDetailDrawerProps {
   record: AttendanceRecord;
   onClose: () => void;
+  onVoidRecord?: (recordId: string, reason: string) => void;
 }
 
 export function RecordDetailDrawer({
   record,
   onClose,
+  onVoidRecord,
 }: RecordDetailDrawerProps) {
+  const [isVoiding, setIsVoiding] = useState(false);
+  const [voidReason, setVoidReason] = useState('Scanned by mistake / duplicate correction');
+  const [voidError, setVoidError] = useState<string | null>(null);
+
   const isLate = record.status === 'late';
   const isTimeOut = record.scanType === 'time-out';
   const isManual = record.verificationMethod === 'MANUAL_OVERRIDE';
   const isVoided = !!record.voidedAt;
+
+  const handleConfirmVoid = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!voidReason.trim()) {
+      setVoidError('A mandatory reason is required to void an official attendance record.');
+      return;
+    }
+    onVoidRecord?.(record.id, voidReason.trim());
+    setIsVoiding(false);
+    onClose();
+  };
 
   // Close on Escape key
   React.useEffect(() => {
@@ -185,7 +204,7 @@ export function RecordDetailDrawer({
           </div>
 
           {/* Void info */}
-          {isVoided && (
+          {isVoided ? (
             <div className="bg-red-50 rounded-lg border border-red-200 p-4 space-y-1 text-xs">
               <p className="font-bold text-red-800">Record Voided</p>
               {record.voidedAt && (
@@ -196,7 +215,71 @@ export function RecordDetailDrawer({
               {record.voidReason && (
                 <p className="text-red-700">{record.voidReason}</p>
               )}
+              {record.voidedBy && (
+                <p className="text-[11px] text-red-500">Officer: {record.voidedBy}</p>
+              )}
             </div>
+          ) : (
+            onVoidRecord && (
+              <div className="pt-2">
+                {!isVoiding ? (
+                  <button
+                    type="button"
+                    onClick={() => setIsVoiding(true)}
+                    className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-md transition-colors"
+                  >
+                    <Ban size={14} />
+                    <span>Void This Record (Audit Trail)</span>
+                  </button>
+                ) : (
+                  <form onSubmit={handleConfirmVoid} className="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-800">
+                        Reason for Voiding
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setIsVoiding(false)}
+                        className="text-slate-400 hover:text-slate-600 text-xs"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+
+                    {voidError && (
+                      <p className="text-[11px] text-rose-600 font-medium">{voidError}</p>
+                    )}
+
+                    <select
+                      value={voidReason}
+                      onChange={(e) => setVoidReason(e.target.value)}
+                      className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-300 rounded focus:ring-1 focus:ring-[#0E294B] text-slate-800"
+                    >
+                      <option value="Scanned by mistake / duplicate correction">
+                        Scanned by mistake / duplicate correction
+                      </option>
+                      <option value="Cadet logged with incorrect credential">
+                        Cadet logged with incorrect credential
+                      </option>
+                      <option value="Administrative schedule adjustment">
+                        Administrative schedule adjustment
+                      </option>
+                      <option value="Turnstile sensor / gate false trigger">
+                        Turnstile sensor / gate false trigger
+                      </option>
+                    </select>
+
+                    <button
+                      type="submit"
+                      className="w-full flex items-center justify-center gap-1.5 py-1.5 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded transition-colors shadow-sm"
+                    >
+                      <Check size={13} />
+                      <span>Confirm Void Record</span>
+                    </button>
+                  </form>
+                )}
+              </div>
+            )
           )}
 
           {/* Record ID */}

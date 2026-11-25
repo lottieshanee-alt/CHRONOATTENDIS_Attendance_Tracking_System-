@@ -163,6 +163,20 @@ export function formatDateTimePHT(input: Date | string | null | undefined): stri
 }
 
 /**
+ * Returns the Manila calendar date as a "YYYY-MM-DD" string.
+ * Use this everywhere a date key is needed for grouping or duplicate checks.
+ */
+export function getManilaDateKey(input: Date | string | number = new Date()): string {
+  const date = typeof input === 'string' || typeof input === 'number' ? new Date(input) : input;
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: MANILA_TIMEZONE,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(date); // en-CA gives "YYYY-MM-DD" natively
+}
+
+/**
  * Checks if a given timestamp is late relative to a lateCutoffTime ("HH:MM", 24-hr).
  * Default cutoff is "07:45".
  * Any second after HH:MM:00 (i.e. >= cutoff hour and minute > 0, or equal hour and minute >= cutoff minute) is marked late.

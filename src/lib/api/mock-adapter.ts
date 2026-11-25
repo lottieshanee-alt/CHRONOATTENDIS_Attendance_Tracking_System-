@@ -5,6 +5,8 @@ import {
   AttendanceRecord,
   Settings,
   Notice,
+  Session,
+  AuditEntry,
 } from '@/types/attendance';
 import {
   INITIAL_STUDENTS,
@@ -18,6 +20,9 @@ const KEYS = {
   records: 'chrono_records',
   settings: 'chrono_settings',
   profile: 'chrono_profile',
+  sessions: 'chrono_sessions',
+  audit: 'chrono_audit',
+  notices: 'chrono_notices',
 };
 
 function delay(min = 80, max = 250): Promise<void> {
@@ -58,6 +63,22 @@ export const mockAdapter: AttendanceApi = {
     await delay(40, 100);
     writeJson(KEYS.records, records);
   },
+  async listSessions() {
+    await delay(40, 80);
+    return readJson<Session[]>(KEYS.sessions, []);
+  },
+  async saveSessions(sessions: Session[]) {
+    await delay(40, 100);
+    writeJson(KEYS.sessions, sessions);
+  },
+  async listAuditEntries() {
+    await delay(40, 80);
+    return readJson<AuditEntry[]>(KEYS.audit, []);
+  },
+  async saveAuditEntries(entries: AuditEntry[]) {
+    await delay(40, 100);
+    writeJson(KEYS.audit, entries);
+  },
   async getSettings() {
     await delay(40, 80);
     return readJson<Settings>(KEYS.settings, DEFAULT_SETTINGS);
@@ -76,7 +97,11 @@ export const mockAdapter: AttendanceApi = {
   },
   async listNotices(): Promise<Notice[]> {
     await delay();
-    return MOCK_NOTICES;
+    return readJson<Notice[]>(KEYS.notices, MOCK_NOTICES);
+  },
+  async saveNotices(notices: Notice[]): Promise<void> {
+    await delay(40, 100);
+    writeJson(KEYS.notices, notices);
   },
 };
 

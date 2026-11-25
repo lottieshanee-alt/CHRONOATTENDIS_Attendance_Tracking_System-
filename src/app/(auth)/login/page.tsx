@@ -1,9 +1,8 @@
 import React, { Suspense } from 'react';
 import type { Metadata } from 'next';
-import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { LoginForm } from '@/components/auth/login-form';
-import { SESSION_COOKIE_NAME } from '@/lib/auth/constants';
+import { getSession } from '@/lib/auth/session';
 
 export const metadata: Metadata = {
   title: 'Terminal Sign In | ChronoAttendis',
@@ -12,10 +11,9 @@ export const metadata: Metadata = {
 };
 
 async function LoginRedirectGuard() {
-  const cookieStore = await cookies();
-  const session = cookieStore.get(SESSION_COOKIE_NAME);
+  const session = await getSession();
 
-  if (session?.value) {
+  if (session) {
     redirect('/dashboard');
   }
 

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { Sidebar, NavTab } from '@/components/layout/sidebar';
 import { Header } from '@/components/layout/header';
 import { MetricsBar } from '@/components/dashboard/metrics-bar';
@@ -12,6 +12,9 @@ import { ActivityGallery } from '@/components/dashboard/activity-gallery';
 import { ScannerStationModal } from '@/components/dashboard/scanner-station-modal';
 import { AttendanceRosterModal } from '@/components/dashboard/attendance-roster-modal';
 import { ManualAttendanceModal } from '@/components/dashboard/manual-attendance-modal';
+import { SessionBanner } from '@/components/dashboard/session-banner';
+import { OpenSessionModal } from '@/components/dashboard/open-session-modal';
+import { CloseSessionModal } from '@/components/dashboard/close-session-modal';
 import { TeacherFacultyView } from '@/components/dashboard/teacher-faculty-view';
 import { StudentsView } from '@/components/dashboard/students-view';
 import { NoticeBoardView } from '@/components/dashboard/notice-board-view';
@@ -20,11 +23,12 @@ import { RecordDetailDrawer } from '@/components/dashboard/record-detail-drawer'
 import { Toast, ToastTone } from '@/components/ui/toast';
 import { Skeleton } from '@/components/ui/skeleton';
 
-import { TODAY_METRICS, PREVIOUS_DAY_METRICS } from '@/lib/mock-data';
-import { DailyMetrics, AttendanceRecord, Student } from '@/types/attendance';
+import { AttendanceRecord, Student } from '@/types/attendance';
 import { useBarcodeScanner } from '@/hooks/use-barcode-scanner';
+import { useIsMounted } from '@/hooks/use-is-mounted';
 import { resolveScan } from '@/lib/scan';
-import { toManilaISO } from '@/lib/time';
+import { toManilaISO, getManilaDateKey } from '@/lib/time';
+import { computeMetrics } from '@/lib/metrics';
 import { useAttendanceStore } from '@/state/attendance-store';
 import { logoutAction } from '@/lib/auth/session';
 
@@ -38,11 +42,27 @@ export default function DashboardPage() {
   const [selectedPeriod, setSelectedPeriod] = useState<'today' | 'previous'>('today');
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Manila "today" dateKey — computed client-side after mount to avoid N8 hydration mismatch
+  const isMounted = useIsMounted();
+  const todayKey = isMounted ? getManilaDateKey(new Date()) : '';
+
   // Modals
   const [isScannerModalOpen, setIsScannerModalOpen] = useState(false);
   const [isRosterModalOpen, setIsRosterModalOpen] = useState(false);
   const [isManualModalOpen, setIsManualModalOpen] = useState(false);
+  const [isOpenSessionModalOpen, setIsOpenSessionModalOpen] = useState(false);
+  const [isCloseSessionModalOpen, setIsCloseSessionModalOpen] = useState(false);
+  const [manualModalInitialQuery, setManualModalInitialQuery] = useState('');
   const [selectedRecord, setSelectedRecord] = useState<AttendanceRecord | null>(null);
+
+  // Available class sections from active student directory
+  const availableSections = useMemo(() => {
+    const set = new Set<string>();
+    for (const s of state.students) {
+      if (s.yearSection) set.add(s.yearSection);
+    }
+    return Array.from(set).sort();
+  }, [state.students]);
 
   // Notifications and screen-reader live announcement (A6)
   const [activeToast, setActiveToast] = useState<{
@@ -54,8 +74,31 @@ export default function DashboardPage() {
   const [liveAnnouncement, setLiveAnnouncement] = useState<string>('');
   const [highlightedRecordId, setHighlightedRecordId] = useState<string | null>(null);
 
-  // Live metrics — start from TODAY_METRICS base, update on each scan
-  const [todayMetrics, setTodayMetrics] = useState<DailyMetrics>(TODAY_METRICS);
+  // Derive metrics from actual records (N3 fix) — no more hard-coded constants at runtime.
+  // todayKey is '' on first SSR frame → computeMetrics returns zeroed object; that's fine,
+  // the hydration skeleton hides the page until state.hydrated is true.
+  const previousDayKey = useMemo(() => {
+    if (!todayKey) return '';
+    const d = new Date(`${todayKey}T12:00:00+08:00`);
+    d.setDate(d.getDate() - 1);
+    return getManilaDateKey(d);
+  }, [todayKey]);
+
+  const todayMetrics = useMemo(
+    () =>
+      todayKey
+        ? computeMetrics(state.records, state.students, todayKey)
+        : computeMetrics([], [], ''),
+    [state.records, state.students, todayKey]
+  );
+
+  const previousDayMetrics = useMemo(
+    () =>
+      previousDayKey
+        ? computeMetrics(state.records, state.students, previousDayKey)
+        : computeMetrics([], [], ''),
+    [state.records, state.students, previousDayKey]
+  );
 
   // Handle scanned barcode
   const handleBarcodeScan = useCallback(
@@ -63,6 +106,7 @@ export default function DashboardPage() {
       const outcome = resolveScan(barcode, {
         students: state.students,
         existingRecords: state.records,
+        session: state.activeSession,
         lateCutoffTime: state.settings.lateCutoffTime,
         now: new Date(),
         scannerLocation: 'Gate 1 - Main Turnstile',
@@ -77,39 +121,9 @@ export default function DashboardPage() {
         store.addRecord(newRecord);
         setHighlightedRecordId(newRecord.id);
 
-        setTodayMetrics((prev) => {
-          const nextPresent = prev.presentCount + 1;
-          const nextBoysPresent =
-            newRecord.gender === 'male' ? prev.boysPresent + 1 : prev.boysPresent;
-          const nextGirlsPresent =
-            newRecord.gender === 'female'
-              ? prev.girlsPresent + 1
-              : prev.girlsPresent;
-          const nextLate =
-            newRecord.status === 'late' ? prev.lateArrivals + 1 : prev.lateArrivals;
-          const nextAbsences = Math.max(0, prev.totalAbsences - 1);
-          const nextUnexcused = Math.max(0, prev.absentUnexcused - 1);
+        // Metrics are now derived from state.records (N3 fix) — no manual counter updates needed.
 
-          return {
-            ...prev,
-            presentCount: nextPresent,
-            presentPercentage: Number(
-              ((nextPresent / prev.totalEnrolled) * 100).toFixed(1)
-            ),
-            boysPresent: nextBoysPresent,
-            boysPercentage: Number(
-              ((nextBoysPresent / prev.boysTotal) * 100).toFixed(1)
-            ),
-            girlsPresent: nextGirlsPresent,
-            girlsPercentage: Number(
-              ((nextGirlsPresent / prev.girlsTotal) * 100).toFixed(1)
-            ),
-            totalAbsences: nextAbsences,
-            absentUnexcused: nextUnexcused,
-            lateArrivals: nextLate,
-          };
-        });
-
+        // Undo action available for 10 seconds (R7)
         setActiveToast({
           tone: outcome.type === 'PRESENT' ? 'success' : 'warning',
           title:
@@ -117,13 +131,24 @@ export default function DashboardPage() {
               ? 'Verified Present'
               : 'Flagged Late Arrival',
           message: `${outcome.record.studentName} (${outcome.record.yearSection})`,
+          action: {
+            label: 'Undo',
+            onClick: () => {
+              store.voidRecord(newRecord.id, 'Scanned by mistake (Undo)');
+              setActiveToast({
+                tone: 'warning',
+                title: 'Scan Undone',
+                message: `Voided check-in record for ${newRecord.studentName}.`,
+              });
+            },
+          },
         });
 
         setTimeout(() => {
           setActiveToast((current) =>
             current?.message?.includes(newRecord.studentName) ? null : current
           );
-        }, 4500);
+        }, 10000); // 10 seconds undo duration (R7)
       } else if (outcome.type === 'ALREADY_CHECKED_IN') {
         setActiveToast({
           tone: 'warning',
@@ -135,6 +160,29 @@ export default function DashboardPage() {
             current?.title === 'Duplicate Scan Rejected' ? null : current
           );
         }, 4000);
+      } else if (outcome.type === 'NOT_ENROLLED') {
+        setActiveToast({
+          tone: 'warning',
+          title: 'Not Enrolled in Section',
+          message: outcome.message,
+          action: {
+            label: 'Manual Override',
+            onClick: () => {
+              setManualModalInitialQuery(barcode);
+              setIsManualModalOpen(true);
+            },
+          },
+        });
+      } else if (outcome.type === 'SESSION_CLOSED') {
+        setActiveToast({
+          tone: 'warning',
+          title: 'Session Closed',
+          message: outcome.message,
+          action: {
+            label: 'Open Session',
+            onClick: () => setIsOpenSessionModalOpen(true),
+          },
+        });
       } else if (outcome.type === 'NOT_RECOGNIZED') {
         setActiveToast({
           tone: 'error',
@@ -142,7 +190,10 @@ export default function DashboardPage() {
           message: outcome.message,
           action: {
             label: 'Look Up Student',
-            onClick: () => setIsManualModalOpen(true),
+            onClick: () => {
+              setManualModalInitialQuery(barcode);
+              setIsManualModalOpen(true);
+            },
           },
         });
       } else if (outcome.type === 'REVOKED_BARCODE') {
@@ -152,7 +203,10 @@ export default function DashboardPage() {
           message: outcome.message,
           action: {
             label: 'Manual Override',
-            onClick: () => setIsManualModalOpen(true),
+            onClick: () => {
+              setManualModalInitialQuery(barcode);
+              setIsManualModalOpen(true);
+            },
           },
         });
       } else {
@@ -163,7 +217,7 @@ export default function DashboardPage() {
         });
       }
     },
-    [state.students, state.records, state.settings.lateCutoffTime, store]
+    [state.students, state.records, state.activeSession, state.settings.lateCutoffTime, store]
   );
 
   // Initialize hardware USB/Bluetooth barcode scanner hook with live settings (D6)
@@ -210,15 +264,19 @@ export default function DashboardPage() {
     reason: string,
     notes?: string
   ) => {
+    // Scope duplicate check to today's Manila date (N2 fix)
     const existing = state.records.find(
       (r) =>
-        r.studentId === student.id && !r.voidedAt && r.scanType === 'time-in'
+        r.studentId === student.id &&
+        !r.voidedAt &&
+        r.scanType === 'time-in' &&
+        getManilaDateKey(r.timestamp) === todayKey
     );
     if (existing) {
       setActiveToast({
         tone: 'warning',
         title: 'Already Recorded',
-        message: `${student.fullName} has already been logged present.`,
+        message: `${student.fullName} has already been logged present today.`,
       });
       playAudioTone('warning');
       return;
@@ -228,6 +286,7 @@ export default function DashboardPage() {
     const newRecordId = `rec-man-${Date.now()}`;
     const newRecord: AttendanceRecord = {
       id: newRecordId,
+      sessionId: state.activeSession?.id,
       studentId: student.id,
       studentName: student.fullName,
       studentNumber: student.studentNumber,
@@ -245,35 +304,7 @@ export default function DashboardPage() {
     store.addRecord(newRecord);
     setHighlightedRecordId(newRecordId);
 
-    setTodayMetrics((prev) => {
-      const nextPresent = prev.presentCount + 1;
-      const nextBoysPresent =
-        student.gender === 'male' ? prev.boysPresent + 1 : prev.boysPresent;
-      const nextGirlsPresent =
-        student.gender === 'female' ? prev.girlsPresent + 1 : prev.girlsPresent;
-      const nextLate = status === 'late' ? prev.lateArrivals + 1 : prev.lateArrivals;
-      const nextAbsences = Math.max(0, prev.totalAbsences - 1);
-      const nextUnexcused = Math.max(0, prev.absentUnexcused - 1);
-
-      return {
-        ...prev,
-        presentCount: nextPresent,
-        presentPercentage: Number(
-          ((nextPresent / prev.totalEnrolled) * 100).toFixed(1)
-        ),
-        boysPresent: nextBoysPresent,
-        boysPercentage: Number(
-          ((nextBoysPresent / prev.boysTotal) * 100).toFixed(1)
-        ),
-        girlsPresent: nextGirlsPresent,
-        girlsPercentage: Number(
-          ((nextGirlsPresent / prev.girlsTotal) * 100).toFixed(1)
-        ),
-        totalAbsences: nextAbsences,
-        absentUnexcused: nextUnexcused,
-        lateArrivals: nextLate,
-      };
-    });
+    // Metrics are now derived from state.records (N3 fix) — no manual counter updates needed.
 
     playAudioTone(status === 'present' ? 'success' : 'warning');
     const msg = `Manual Override: Verified ${student.fullName} as ${status.toUpperCase()} (${reason})`;
@@ -286,7 +317,12 @@ export default function DashboardPage() {
   };
 
   const activeMetrics =
-    selectedPeriod === 'today' ? todayMetrics : PREVIOUS_DAY_METRICS;
+    selectedPeriod === 'today' ? todayMetrics : previousDayMetrics;
+
+  const unreadNoticesCount = useMemo(
+    () => state.notices.filter((n) => !n.readAt).length,
+    [state.notices]
+  );
 
   // Loading skeleton while hydrating from localStorage (B5)
   if (!state.hydrated) {
@@ -316,8 +352,10 @@ export default function DashboardPage() {
         collapsed={sidebarCollapsed}
         onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
         scannerConnected={isScannerReady}
+        lastScanTime={lastScanTime}
         onOpenScannerStation={() => setIsScannerModalOpen(true)}
         userProfile={state.profile}
+        unreadNoticesCount={unreadNoticesCount}
         onSignOut={() => {
           logoutAction();
         }}
@@ -354,12 +392,22 @@ export default function DashboardPage() {
         <main className="flex-1 overflow-y-auto p-6 space-y-6">
           {currentTab === 'dashboard' && (
             <>
+              {/* Section 0: Attendance Session Control & Call-to-action (R1) */}
+              <SessionBanner
+                activeSession={state.activeSession}
+                students={state.students}
+                records={state.records}
+                onOpenNewSession={() => setIsOpenSessionModalOpen(true)}
+                onOpenScanner={() => setIsScannerModalOpen(true)}
+                onRequestCloseSession={() => setIsCloseSessionModalOpen(true)}
+              />
+
               {/* Section 1: Top Metrics Bar */}
               <MetricsBar
                 metrics={activeMetrics}
                 selectedPeriod={selectedPeriod}
                 onSelectPeriod={setSelectedPeriod}
-                previousDayMetrics={PREVIOUS_DAY_METRICS}
+                previousDayMetrics={previousDayMetrics}
                 showGenderSplit={state.settings.showGenderSplit}
               />
 
@@ -437,16 +485,62 @@ export default function DashboardPage() {
       {/* Modal 3: Manual Attendance Fallback */}
       <ManualAttendanceModal
         isOpen={isManualModalOpen}
-        onClose={() => setIsManualModalOpen(false)}
+        onClose={() => {
+          setIsManualModalOpen(false);
+          setManualModalInitialQuery('');
+        }}
+        initialQuery={manualModalInitialQuery}
         students={state.students}
         onRecordManualAttendance={handleRecordManualAttendance}
       />
 
-      {/* Drawer: Record Detail (D7) */}
+      {/* Modal 4: Open New Attendance Session (R1) */}
+      <OpenSessionModal
+        isOpen={isOpenSessionModalOpen}
+        onClose={() => setIsOpenSessionModalOpen(false)}
+        defaultCutoffTime={state.settings.lateCutoffTime}
+        sections={availableSections}
+        onOpenSession={async (params) => {
+          const newSession = await store.openSession(params);
+          setActiveToast({
+            tone: 'success',
+            title: 'Attendance Session Opened',
+            message: `${newSession.subject} (${newSession.section}) — Ready for scans.`,
+          });
+        }}
+      />
+
+      {/* Modal 5: Close Attendance Session (R1, R3) */}
+      <CloseSessionModal
+        isOpen={isCloseSessionModalOpen}
+        onClose={() => setIsCloseSessionModalOpen(false)}
+        session={state.activeSession}
+        students={state.students}
+        records={state.records}
+        onConfirmClose={async (sessionId) => {
+          const { session, absentRecords } = await store.closeSession(sessionId);
+          setActiveToast({
+            tone: 'info',
+            title: 'Session Finalized',
+            message: `Closed "${session.subject}". Marked ${absentRecords.length} unverified cadets as absent.`,
+          });
+        }}
+      />
+
+      {/* Drawer: Record Detail with Void Action (D7, R5) */}
       {selectedRecord && (
         <RecordDetailDrawer
           record={selectedRecord}
           onClose={() => setSelectedRecord(null)}
+          onVoidRecord={async (recordId, reason) => {
+            await store.voidRecord(recordId, reason);
+            setActiveToast({
+              tone: 'warning',
+              title: 'Record Voided',
+              message: `Official record ${recordId} was voided with audit logging.`,
+            });
+            setSelectedRecord(null);
+          }}
         />
       )}
     </div>
